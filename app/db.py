@@ -19,7 +19,7 @@ def utcnow_iso() -> str:
 DEFAULT_SETTINGS: dict[SettingKey, str] = {
     "welcome_message": "Привет, это шаблон сообщения.",
     "sale_message": "Покупайте курс.",
-    "channel_url": "https://t.me/",
+    "channel_url": "https://t.me/+Kllfasv8Mq5jZjli",
 }
 
 
