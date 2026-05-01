@@ -27,7 +27,7 @@ def _html(body: str) -> web.Response:
         "<meta name='viewport' content='width=device-width,initial-scale=1'>"
         f"<body style='font-family:system-ui;padding:24px'>{body}</body></html>"
     )
-    return web.Response(text=html, content_type="text/html; charset=utf-8")
+    return web.Response(text=html, content_type="text/html", charset="utf-8")
 
 
 async def health(_request: web.Request) -> web.Response:
