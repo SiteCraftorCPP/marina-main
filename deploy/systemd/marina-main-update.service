@@ -1,0 +1,10 @@
+[Unit]
+Description=Update marina-main from git and redeploy
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/projects/marina-main
+ExecStart=/opt/projects/marina-main/deploy/vps/update.sh

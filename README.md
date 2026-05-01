@@ -117,3 +117,52 @@ Webhook принимает **HTTP Basic** с тем же Shop ID / Secret Key ([
 
 - `/start` — начать или перезапустить тест
 - `/admin` — админ-панель (доступна только пользователям из `ADMIN_IDS`)
+
+---
+
+## 🖥 VPS: отдельная папка и автозапуск
+
+Ниже команды для Linux VPS, чтобы проект работал из отдельной директории и автоматически поднимался после перезагрузки.
+
+```bash
+# 1) Отдельная директория под проекты
+sudo mkdir -p /opt/projects
+cd /opt/projects
+
+# 2) Клонируем проект в отдельную папку
+sudo git clone https://github.com/SiteCraftorCPP/marina-main.git marina-main
+cd /opt/projects/marina-main
+
+# 3) Создаём .env
+sudo cp .env.example .env
+sudo nano .env
+
+# 4) Делаем скрипт обновления исполняемым
+sudo chmod +x /opt/projects/marina-main/deploy/vps/update.sh
+
+# 5) Устанавливаем systemd unit-файлы
+sudo cp /opt/projects/marina-main/deploy/systemd/marina-main.service /etc/systemd/system/
+sudo cp /opt/projects/marina-main/deploy/systemd/marina-main-update.service /etc/systemd/system/
+sudo cp /opt/projects/marina-main/deploy/systemd/marina-main-update.timer /etc/systemd/system/
+
+# 6) Релоад systemd
+sudo systemctl daemon-reload
+
+# 7) Автозапуск стека при старте VPS
+sudo systemctl enable --now marina-main.service
+
+# 8) Автообновление с git каждые 5 минут
+sudo systemctl enable --now marina-main-update.timer
+
+# 9) Проверка
+sudo systemctl status marina-main.service --no-pager
+sudo systemctl status marina-main-update.timer --no-pager
+sudo systemctl list-timers --all | grep marina-main
+```
+
+### Ручное обновление
+
+```bash
+cd /opt/projects/marina-main
+sudo /opt/projects/marina-main/deploy/vps/update.sh
+```

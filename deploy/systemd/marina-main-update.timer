@@ -1,0 +1,11 @@
+[Unit]
+Description=Run marina-main update every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Unit=marina-main-update.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target
