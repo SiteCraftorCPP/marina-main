@@ -6,6 +6,7 @@ import os
 import uuid
 
 import aiohttp
+from aiohttp import web
 
 from aiogram import BaseMiddleware, Bot, Dispatcher, F, Router
 from aiogram.client.default import DefaultBotProperties
