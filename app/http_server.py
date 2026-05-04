@@ -9,6 +9,7 @@ from aiohttp import web
 from .bepaid_api import (
     extract_amount_currency,
     extract_uid,
+    hosted_checkout_notification_to_transaction,
     is_transaction_successful,
     normalize_webhook_transaction,
     resolve_tracking_id,
@@ -61,7 +62,9 @@ async def bepaid_webhook(request: web.Request) -> web.Response:
 
     tx = normalize_webhook_transaction(body)
     if tx is None:
-        # Другие типы уведомлений (истёкший token checkout, подписки и т.д.) — ACK 200.
+        tx = hosted_checkout_notification_to_transaction(body)
+
+    if tx is None:
         logger.info(
             "bepaid webhook ignored (shape): keys=%s",
             list(body.keys())[:40],

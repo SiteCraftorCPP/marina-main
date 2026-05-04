@@ -79,6 +79,81 @@ def normalize_webhook_transaction(body: dict[str, Any]) -> Optional[dict[str, An
     return None
 
 
+def hosted_checkout_notification_to_transaction(body: dict[str, Any]) -> Optional[dict[str, Any]]:
+    """
+    Hosted checkout (payment widget) шлёт уведомления без обёртки transaction —
+    см. раздел Checkout в https://docs.bepaid.by/en/using_api/webhooks/
+    """
+    if body.get("transaction_type") != "payment":
+        return None
+
+    order = body.get("order")
+    if not isinstance(order, dict):
+        return None
+
+    tracking_id = coerce_id(order.get("tracking_id"))
+    if not tracking_id:
+        return None
+
+    if body.get("expired") is True:
+        return None
+
+    status_raw = body.get("status")
+    status_s = str(status_raw).strip().lower() if status_raw is not None else ""
+
+    failed = {"failed", "fail", "failure", "error", "declined", "decline", "expired", "canceled", "cancelled"}
+
+    if status_s and status_s in failed:
+        return None
+
+    gw = body.get("gateway_response")
+    if isinstance(gw, dict):
+        gw_st = str(gw.get("status") or "").strip().lower()
+        if gw_st and gw_st in failed:
+            return None
+
+    finished = body.get("finished")
+    positive = {"successful", "success", "paid", "completed", "processed", "approved"}
+    success = False
+    if finished is True:
+        success = True
+        if status_s and status_s in failed:
+            success = False
+    elif status_s and status_s in positive:
+        success = True
+
+    if not success:
+        logger.info(
+            "checkout webhook not success: finished=%s expired=%s status=%s msg=%s",
+            finished,
+            body.get("expired"),
+            status_raw,
+            str(body.get("message") or "")[:180],
+        )
+        return None
+
+    amount = order.get("amount")
+    currency = order.get("currency")
+
+    uid: Optional[str] = None
+    if isinstance(gw, dict):
+        uid = coerce_id(gw.get("uid")) or coerce_id(gw.get("id"))
+    if uid is None:
+        uid = coerce_id(body.get("job_id"))
+
+    tx: dict[str, Any] = {
+        "tracking_id": tracking_id,
+        "amount": amount,
+        "currency": currency,
+        "status": "successful",
+        "payment": {"status": "successful"},
+    }
+    if uid:
+        tx["uid"] = uid
+        tx["id"] = uid
+    return tx
+
+
 def is_transaction_successful(tx: dict[str, Any]) -> bool:
     if tx.get("status") == "successful":
         return True
