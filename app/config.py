@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import os
+from typing import Optional
+
 from dotenv import load_dotenv
 
 
@@ -29,6 +31,8 @@ class Config:
     payment_amount: int
     payment_currency: str
     public_base_url: str
+    # Срок жизни checkout-токена (минуты). None / 0 — не передаём expired_at, берётся дефолт BePaid.
+    checkout_expires_minutes: Optional[int]
 
     @property
     def bepaid_enabled(self) -> bool:
@@ -62,6 +66,15 @@ def load_config() -> Config:
 
     public_base_url = (os.getenv("PUBLIC_BASE_URL", "") or "").strip().rstrip("/")
 
+    ttl_raw = (os.getenv("CHECKOUT_EXPIRES_MINUTES", "") or "").strip()
+    checkout_expires_minutes: Optional[int] = None
+    if ttl_raw:
+        try:
+            v = int(ttl_raw)
+            checkout_expires_minutes = v if v > 0 else None
+        except ValueError:
+            checkout_expires_minutes = None
+
     return Config(
         bot_token=bot_token,
         admin_ids=admin_ids,
@@ -74,5 +87,6 @@ def load_config() -> Config:
         payment_amount=payment_amount,
         payment_currency=payment_currency,
         public_base_url=public_base_url,
+        checkout_expires_minutes=checkout_expires_minutes,
     )
 

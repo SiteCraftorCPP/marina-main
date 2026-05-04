@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 import aiohttp
@@ -221,6 +222,16 @@ async def create_hosted_checkout(
     fn = (first_name or "").strip() or "Клиент"
     customer: dict[str, Any] = {"first_name": fn}
 
+    order: dict[str, Any] = {
+        "currency": cfg.payment_currency,
+        "amount": int(cfg.payment_amount),
+        "description": "Доступ к обучению (единоразово)",
+        "tracking_id": tracking_id,
+    }
+    if cfg.checkout_expires_minutes and cfg.checkout_expires_minutes > 0:
+        exp = datetime.now(timezone.utc) + timedelta(minutes=int(cfg.checkout_expires_minutes))
+        order["expired_at"] = exp.isoformat(timespec="seconds")
+
     payload: dict[str, Any] = {
         "checkout": {
             "test": bool(cfg.bepaid_test),
@@ -235,12 +246,7 @@ async def create_hosted_checkout(
                 "notification_url": f"{base}/webhooks/bepaid",
                 "language": "ru",
             },
-            "order": {
-                "currency": cfg.payment_currency,
-                "amount": int(cfg.payment_amount),
-                "description": "Доступ к обучению (единоразово)",
-                "tracking_id": tracking_id,
-            },
+            "order": order,
             "customer": customer,
         }
     }
